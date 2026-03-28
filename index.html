@@ -188,6 +188,117 @@
     .metric .value.danger { color: var(--danger); }
     .metric .value.ok { color: var(--ok); }
 
+    .hero-strip {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 10px;
+      padding: 12px 16px 0;
+    }
+
+    .hero-main,
+    .hero-card {
+      border: 1px solid rgba(46, 98, 123, 0.55);
+      border-radius: 16px;
+      background: linear-gradient(160deg, rgba(12, 31, 40, 0.92), rgba(13, 49, 62, 0.72));
+      box-shadow: var(--shadow);
+    }
+
+    .hero-main {
+      padding: 18px 18px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-main::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -60px auto;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(31, 198, 166, 0.22), rgba(31, 198, 166, 0));
+      pointer-events: none;
+    }
+
+    .hero-kicker {
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #9ed7e2;
+      font-family: 'Space Grotesk', sans-serif;
+      margin-bottom: 8px;
+    }
+
+    .hero-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 27px;
+      line-height: 1.05;
+      max-width: 12ch;
+      margin-bottom: 10px;
+    }
+
+    .hero-copy {
+      font-size: 12px;
+      color: #c2dce6;
+      line-height: 1.65;
+      max-width: 60ch;
+      margin-bottom: 14px;
+    }
+
+    .hero-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      color: #d8f7ff;
+      background: rgba(7, 19, 26, 0.48);
+      border: 1px solid rgba(65, 184, 240, 0.26);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .hero-card {
+      padding: 14px;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .hero-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .hero-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 24px;
+      line-height: 1;
+      margin: 10px 0 6px;
+      color: #effcff;
+    }
+
+    .hero-detail {
+      font-size: 11px;
+      line-height: 1.45;
+      color: #b7d2dd;
+    }
+
     .layout {
       flex: 1;
       min-height: 0;
@@ -326,6 +437,7 @@
       gap: 10px;
       align-items: center;
       flex-wrap: wrap;
+      background: linear-gradient(180deg, rgba(11, 32, 42, 0.95), rgba(11, 32, 42, 0.75));
     }
 
     .work-toolbar input,
@@ -344,6 +456,13 @@
     .work-toolbar input:focus,
     .work-toolbar select:focus {
       border-color: var(--accent-2);
+    }
+
+    .toolbar-note {
+      margin-left: auto;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.04em;
     }
 
     .tabs {
@@ -387,6 +506,17 @@
     .tab-panel.active {
       display: block;
       animation: fadeIn 0.25s ease;
+    }
+
+    .section-intro {
+      margin: 4px 2px 12px;
+      padding: 10px 12px;
+      border: 1px solid rgba(46, 98, 123, 0.46);
+      border-radius: 12px;
+      background: linear-gradient(145deg, rgba(7, 19, 26, 0.5), rgba(13, 31, 40, 0.8));
+      font-size: 11px;
+      line-height: 1.55;
+      color: #bad8e3;
     }
 
     @keyframes fadeIn {
@@ -692,6 +822,48 @@
       padding-left: 8px;
     }
 
+    .trace-path {
+      display: grid;
+      gap: 8px;
+    }
+
+    .path-chip {
+      display: grid;
+      grid-template-columns: 58px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(46, 98, 123, 0.42);
+      background: rgba(7, 19, 26, 0.42);
+      font-size: 11px;
+    }
+
+    .path-chip.current {
+      border-color: rgba(31, 198, 166, 0.55);
+      background: rgba(31, 198, 166, 0.12);
+    }
+
+    .path-seq {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .path-main {
+      display: grid;
+      gap: 2px;
+    }
+
+    .path-name {
+      color: #e8f9ff;
+      font-weight: 600;
+    }
+
+    .path-meta {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
     .toast {
       position: fixed;
       right: 16px;
@@ -730,6 +902,10 @@
     }
 
     @media (max-width: 1500px) {
+      .hero-strip {
+        grid-template-columns: 1fr;
+      }
+
       .layout {
         grid-template-columns: 280px 1fr 330px;
       }
@@ -738,6 +914,10 @@
     @media (max-width: 1200px) {
       .metrics {
         grid-template-columns: repeat(3, minmax(120px, 1fr));
+      }
+
+      .hero-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       .layout {
@@ -751,6 +931,28 @@
 
       .type-list {
         max-height: 300px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .metrics {
+        grid-template-columns: repeat(2, minmax(120px, 1fr));
+      }
+
+      .hero-title {
+        font-size: 23px;
+      }
+
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar-note {
+        margin-left: 0;
+      }
+
+      .path-chip {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -796,6 +998,45 @@
     <div class="metric">
       <div class="label">Avg Latency</div>
       <div class="value" id="metricAvg">0ms</div>
+    </div>
+  </section>
+
+  <section class="hero-strip">
+    <article class="hero-main">
+      <div class="hero-kicker">Trace Command Center</div>
+      <div class="hero-title">Follow rule execution like a live incident room.</div>
+      <div class="hero-copy">
+        NexTrace Pro turns noisy Pega-style traces into a readable control surface with filter-aware flow views,
+        faster triage, and remediation guidance that stays attached to the failing rule path.
+      </div>
+      <div class="hero-badges">
+        <span class="hero-badge" id="heroMode">Heuristic AI active</span>
+        <span class="hero-badge" id="heroFilters">All telemetry in view</span>
+        <span class="hero-badge" id="heroSelection">No event pinned</span>
+      </div>
+    </article>
+
+    <div class="hero-grid">
+      <article class="hero-card">
+        <div class="hero-label">Visible Flow</div>
+        <div class="hero-value" id="heroVisible">0</div>
+        <div class="hero-detail" id="heroVisibleDetail">Filtered events currently in focus.</div>
+      </article>
+      <article class="hero-card">
+        <div class="hero-label">Active Threads</div>
+        <div class="hero-value" id="heroThreads">0</div>
+        <div class="hero-detail" id="heroThreadsDetail">Thread lanes currently represented on screen.</div>
+      </article>
+      <article class="hero-card">
+        <div class="hero-label">Incident Pressure</div>
+        <div class="hero-value" id="heroPressure">Calm</div>
+        <div class="hero-detail" id="heroPressureDetail">No failures captured yet.</div>
+      </article>
+      <article class="hero-card">
+        <div class="hero-label">Latest Rule</div>
+        <div class="hero-value" id="heroLatest">None</div>
+        <div class="hero-detail" id="heroLatestDetail">Import a trace or generate a demo session.</div>
+      </article>
     </div>
   </section>
 
@@ -849,16 +1090,20 @@
           <input id="slowThreshold" type="number" value="220" min="1" style="width:82px" />
         </label>
         <button id="btnFocusFailures" class="tiny">Focus Fails</button>
+        <div class="toolbar-note">Regex search, thread focus, and sequence flow stay synchronized.</div>
       </div>
 
       <div class="tabs">
-        <button class="tab active" data-tab="events">Event Stream</button>
-        <button class="tab" data-tab="sequence">Sequential Filter Diagram</button>
-        <button class="tab" data-tab="insights">AI Insights</button>
+        <button class="tab active" data-tab="events">Event Console</button>
+        <button class="tab" data-tab="sequence">Sequence Radar</button>
+        <button class="tab" data-tab="insights">AI Runbook</button>
       </div>
 
       <div class="tab-panels">
         <section class="tab-panel active" id="tab-events">
+          <div class="section-intro">
+            The event console is your raw execution ledger. Search, narrow by thread, or pin failure-only focus and the same subset carries across the whole workspace.
+          </div>
           <table>
             <thead>
               <tr>
@@ -878,10 +1123,16 @@
         </section>
 
         <section class="tab-panel" id="tab-sequence">
+          <div class="section-intro">
+            Sequence Radar turns the active filter set into a readable path. Horizontal movement shows execution order, lane changes expose thread hops, and vertical offsets show depth.
+          </div>
           <div id="sequenceHost"></div>
         </section>
 
         <section class="tab-panel" id="tab-insights">
+          <div class="section-intro">
+            AI Runbook combines tracer heuristics with optional LLM enrichment so the first response is remediation, not guesswork.
+          </div>
           <div class="llm-bar">
             <div class="llm-grid">
               <div class="llm-item">
@@ -1752,6 +2003,64 @@
         pill.style.borderColor = fail ? 'rgba(255,106,106,0.65)' : 'rgba(101,212,135,0.5)';
         pill.style.color = fail ? 'var(--danger)' : 'var(--ok)';
       }
+
+      updateHeroSummary({ total, fail, slow, avg });
+    }
+
+    function updateHeroSummary({ total, fail, slow, avg }) {
+      const visible = state.filtered.length;
+      const filteredBase = visible ? state.filtered : state.events;
+      const threads = new Set(filteredBase.map((ev) => ev.thread)).size;
+      const latest = filteredBase[filteredBase.length - 1] || null;
+      const selected = state.selectedSeq !== null
+        ? state.events.find((ev) => ev.seq === state.selectedSeq) || null
+        : null;
+
+      let activeFilters = 0;
+      if (state.search) activeFilters += 1;
+      if (state.thread !== 'ALL') activeFilters += 1;
+      if (state.minDepth > 0) activeFilters += 1;
+      if (state.onlyException) activeFilters += 1;
+      if (state.onlySlow) activeFilters += 1;
+      if (state.collapseRepeated) activeFilters += 1;
+      if (state.activeStatuses.size < 3) activeFilters += 1;
+      if (state.activeTypes.size < RULE_CATALOG.length) activeFilters += 1;
+
+      const failRate = total ? Math.round((fail / total) * 100) : 0;
+      const pressureTone = !total ? '#effcff' : failRate >= 25 ? 'var(--danger)' : failRate >= 10 ? 'var(--warn)' : 'var(--ok)';
+
+      document.getElementById('heroVisible').textContent = String(visible);
+      document.getElementById('heroVisibleDetail').textContent = total
+        ? `${visible} of ${total} events are currently in focus.`
+        : 'Filtered events currently in focus.';
+
+      document.getElementById('heroThreads').textContent = String(threads);
+      document.getElementById('heroThreadsDetail').textContent = threads
+        ? `${threads} thread lane${threads === 1 ? '' : 's'} represented in the active slice.`
+        : 'Thread lanes currently represented on screen.';
+
+      document.getElementById('heroPressure').textContent = total ? `${failRate}%` : 'Calm';
+      document.getElementById('heroPressure').style.color = pressureTone;
+      document.getElementById('heroPressureDetail').textContent = total
+        ? `${fail} failures, ${slow} slow events, ${avg}ms average latency.`
+        : 'No failures captured yet.';
+
+      document.getElementById('heroLatest').textContent = latest
+        ? (latest.name.length > 14 ? `${latest.name.slice(0, 14)}...` : latest.name)
+        : 'None';
+      document.getElementById('heroLatestDetail').textContent = latest
+        ? `${labelForType(latest.type)} on ${latest.thread} at ${readableTime(latest.time)}.`
+        : 'Import a trace or generate a demo session.';
+
+      document.getElementById('heroMode').textContent = state.llm.apiKey
+        ? `Live LLM ready · ${state.llm.model}`
+        : 'Heuristic AI active';
+      document.getElementById('heroFilters').textContent = activeFilters
+        ? `${activeFilters} focus filter${activeFilters === 1 ? '' : 's'} active`
+        : 'All telemetry in view';
+      document.getElementById('heroSelection').textContent = selected
+        ? `Pinned #${selected.seq} · ${selected.name}`
+        : 'No event pinned';
     }
 
     function renderEventsTable() {
@@ -2356,6 +2665,17 @@
 
       const propsHtml = Object.entries(event.props || {}).map(([k, v]) => `<div class="k">${safeText(k)}</div><div>${safeText(v)}</div>`).join('');
       const stack = event.exception?.stack || '';
+      const pathEvents = [...context, event];
+      const pathHtml = pathEvents.map((item) => `
+        <div class="path-chip ${item.seq === event.seq ? 'current' : ''}">
+          <div class="path-seq">#${item.seq}</div>
+          <div class="path-main">
+            <div class="path-name">${safeText(item.name)}</div>
+            <div class="path-meta">${safeText(labelForType(item.type))} · ${safeText(item.thread)} · ${item.elapsedMs}ms</div>
+          </div>
+          <span class="status-chip ${item.status}">${item.status}</span>
+        </div>
+      `).join('');
 
       body.innerHTML = `
         <section class="detail-block">
@@ -2378,6 +2698,11 @@
           <div class="bullet-list">${diagnosis.suggestions.map((s) => `<div>${safeText(s)}</div>`).join('')}</div>
           <div style="margin-top:8px;font-size:11px;color:var(--muted)">${safeText(diagnosis.contextHint)}</div>
           <div style="margin-top:8px;font-size:10px;color:var(--muted)">Confidence ${(diagnosis.confidence * 100).toFixed(0)}%</div>
+        </section>
+
+        <section class="detail-block">
+          <h4>Execution Path</h4>
+          <div class="trace-path">${pathHtml}</div>
         </section>
 
         ${llmEnriched ? `
@@ -2411,6 +2736,12 @@
       renderEventsTable();
       renderSequenceDiagram();
       renderDetail(found);
+      updateHeroSummary({
+        total: state.events.length,
+        fail: state.events.filter((ev) => ev.status === 'fail' || ev.exception).length,
+        slow: state.events.filter((ev) => ev.elapsedMs >= state.slowThreshold).length,
+        avg: state.events.length ? Math.round(state.events.reduce((sum, ev) => sum + ev.elapsedMs, 0) / state.events.length) : 0
+      });
     }
 
     function setActiveTab(name) {
