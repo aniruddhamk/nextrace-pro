@@ -1,0 +1,2656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexTrace Pro - Pega-Style Rule Tracer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+    :root {
+      --bg: #07131a;
+      --bg-soft: #0d1f28;
+      --panel: #102631;
+      --panel-2: #17323f;
+      --line: #245065;
+      --line-soft: #2e627b;
+      --text: #e2f2f8;
+      --muted: #8eb1bf;
+      --accent: #1fc6a6;
+      --accent-2: #41b8f0;
+      --warn: #ffb347;
+      --danger: #ff6a6a;
+      --ok: #65d487;
+      --shadow: 0 18px 35px rgba(0, 0, 0, 0.28);
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: radial-gradient(circle at 10% -15%, rgba(65, 184, 240, 0.2), transparent 45%),
+                  radial-gradient(circle at 95% 5%, rgba(31, 198, 166, 0.18), transparent 35%),
+                  var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(7, 19, 26, 0.85);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-right: 10px;
+      min-width: 180px;
+    }
+
+    .brand-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid var(--line-soft);
+      display: grid;
+      place-items: center;
+      font-family: 'Space Grotesk', sans-serif;
+      background: linear-gradient(145deg, rgba(65, 184, 240, 0.22), rgba(31, 198, 166, 0.3));
+      color: #d6fbff;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .brand-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 17px;
+      letter-spacing: 0.03em;
+      font-weight: 700;
+    }
+
+    .brand-sub {
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      flex: 1;
+    }
+
+    button,
+    .btn {
+      border: 1px solid var(--line-soft);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+      white-space: nowrap;
+    }
+
+    button:hover,
+    .btn:hover {
+      border-color: var(--accent-2);
+      transform: translateY(-1px);
+      background: var(--panel-2);
+    }
+
+    .btn.primary {
+      background: linear-gradient(145deg, rgba(31, 198, 166, 0.24), rgba(65, 184, 240, 0.2));
+      border-color: rgba(65, 184, 240, 0.7);
+    }
+
+    .btn.warn {
+      border-color: rgba(255, 179, 71, 0.6);
+      color: #ffd6a1;
+    }
+
+    .btn.danger {
+      border-color: rgba(255, 106, 106, 0.65);
+      color: #ffb8b8;
+    }
+
+    .status-pill {
+      margin-left: auto;
+      border: 1px solid rgba(101, 212, 135, 0.5);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 10px;
+      color: var(--ok);
+      background: rgba(101, 212, 135, 0.1);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      animation: pulseGlow 2.4s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 0 0 rgba(101, 212, 135, 0.18); }
+      70% { box-shadow: 0 0 0 12px rgba(101, 212, 135, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(101, 212, 135, 0); }
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      gap: 10px;
+      padding: 12px 16px 0;
+    }
+
+    .metric {
+      background: linear-gradient(155deg, rgba(16, 38, 49, 0.9), rgba(23, 50, 63, 0.55));
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .metric .label {
+      font-size: 9px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 6px;
+    }
+
+    .metric .value {
+      font-size: 20px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+    }
+
+    .metric .value.warn { color: var(--warn); }
+    .metric .value.danger { color: var(--danger); }
+    .metric .value.ok { color: var(--ok); }
+
+    .layout {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 320px 1fr 360px;
+      gap: 10px;
+      padding: 12px 16px 16px;
+      overflow: hidden;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(170deg, rgba(16, 38, 49, 0.92), rgba(13, 31, 40, 0.85));
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .panel-title {
+      font-size: 10px;
+      letter-spacing: 0.13em;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      padding: 12px 14px 8px;
+    }
+
+    .filter-section {
+      padding: 0 14px 10px;
+      border-bottom: 1px solid rgba(36, 80, 101, 0.5);
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .tiny {
+      font-size: 10px;
+      padding: 6px 8px;
+      border-radius: 8px;
+    }
+
+    .type-list {
+      overflow: auto;
+      max-height: 430px;
+      padding-right: 3px;
+    }
+
+    .type-group {
+      margin-bottom: 10px;
+      border: 1px dashed rgba(46, 98, 123, 0.45);
+      border-radius: 10px;
+      padding: 8px;
+      background: rgba(7, 19, 26, 0.35);
+    }
+
+    .type-group-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 10px;
+      color: #a4dce8;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .type-item,
+    .status-item,
+    .switch-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 6px;
+      border-radius: 8px;
+      font-size: 11px;
+      color: #d0e8f0;
+    }
+
+    .type-item:hover,
+    .status-item:hover,
+    .switch-item:hover {
+      background: rgba(36, 80, 101, 0.3);
+    }
+
+    .type-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      flex-shrink: 0;
+    }
+
+    .count-badge {
+      margin-left: auto;
+      background: rgba(7, 19, 26, 0.8);
+      border: 1px solid rgba(46, 98, 123, 0.5);
+      border-radius: 999px;
+      padding: 1px 7px;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 13px;
+      height: 13px;
+      cursor: pointer;
+    }
+
+    .pain-list {
+      color: #b6d5df;
+      font-size: 11px;
+      line-height: 1.6;
+      display: grid;
+      gap: 7px;
+    }
+
+    .pain-list div {
+      border-left: 2px solid rgba(65, 184, 240, 0.4);
+      padding-left: 8px;
+    }
+
+    .work {
+      min-width: 0;
+    }
+
+    .work-toolbar {
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .work-toolbar input,
+    .work-toolbar select {
+      border: 1px solid var(--line-soft);
+      background: var(--bg-soft);
+      color: var(--text);
+      border-radius: 9px;
+      padding: 7px 10px;
+      font-size: 11px;
+      min-width: 100px;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .work-toolbar input:focus,
+    .work-toolbar select:focus {
+      border-color: var(--accent-2);
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--line);
+      background: rgba(7, 19, 26, 0.35);
+    }
+
+    .tab {
+      padding: 10px 14px;
+      border: none;
+      border-right: 1px solid rgba(46, 98, 123, 0.35);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .tab.active {
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(31, 198, 166, 0.14), rgba(65, 184, 240, 0.12));
+      border-bottom: 2px solid var(--accent);
+    }
+
+    .tab-panels {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+    }
+
+    .tab-panel {
+      position: absolute;
+      inset: 0;
+      display: none;
+      overflow: auto;
+      padding: 10px;
+    }
+
+    .tab-panel.active {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(3px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid rgba(46, 98, 123, 0.4);
+      padding: 7px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      background: rgba(16, 38, 49, 0.95);
+      color: #a9cbda;
+      text-transform: uppercase;
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: 0.08em;
+      font-size: 9px;
+    }
+
+    tr:hover {
+      background: rgba(36, 80, 101, 0.28);
+      cursor: pointer;
+    }
+
+    tr.selected {
+      background: rgba(31, 198, 166, 0.14);
+      outline: 1px solid rgba(31, 198, 166, 0.4);
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border-radius: 999px;
+      font-size: 10px;
+      padding: 2px 8px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .status-chip.pass {
+      color: var(--ok);
+      border-color: rgba(101, 212, 135, 0.5);
+      background: rgba(101, 212, 135, 0.1);
+    }
+
+    .status-chip.warn {
+      color: var(--warn);
+      border-color: rgba(255, 179, 71, 0.5);
+      background: rgba(255, 179, 71, 0.1);
+    }
+
+    .status-chip.fail {
+      color: var(--danger);
+      border-color: rgba(255, 106, 106, 0.55);
+      background: rgba(255, 106, 106, 0.12);
+    }
+
+    .rule-badge {
+      border-radius: 8px;
+      padding: 2px 6px;
+      font-size: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #d8f6ff;
+      white-space: nowrap;
+      display: inline-block;
+    }
+
+    .table-empty,
+    .sequence-empty,
+    .insight-empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 40px 10px;
+      font-size: 12px;
+      border: 1px dashed rgba(46, 98, 123, 0.5);
+      border-radius: 12px;
+      margin: 10px;
+    }
+
+    .sequence-wrap {
+      min-width: 100%;
+      overflow: auto;
+      border: 1px solid rgba(46, 98, 123, 0.45);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(7, 19, 26, 0.5), rgba(13, 31, 40, 0.8));
+    }
+
+    .insight-card {
+      border: 1px solid rgba(46, 98, 123, 0.55);
+      border-left-width: 4px;
+      border-radius: 12px;
+      background: rgba(7, 19, 26, 0.45);
+      padding: 10px;
+      margin-bottom: 10px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .insight-card.high { border-left-color: var(--danger); }
+    .insight-card.medium { border-left-color: var(--warn); }
+    .insight-card.low { border-left-color: var(--accent-2); }
+
+    .insight-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .llm-bar {
+      border: 1px solid rgba(46, 98, 123, 0.55);
+      border-radius: 12px;
+      background: rgba(7, 19, 26, 0.46);
+      padding: 10px;
+      margin-bottom: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .llm-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr 1fr;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .llm-item {
+      display: grid;
+      gap: 4px;
+    }
+
+    .llm-item label {
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .llm-item input {
+      border: 1px solid var(--line-soft);
+      background: var(--bg-soft);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 7px 9px;
+      font-size: 11px;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .llm-item input:focus {
+      border-color: var(--accent-2);
+    }
+
+    .llm-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .llm-note {
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .llm-note code {
+      font-size: 10px;
+    }
+
+    .llm-block {
+      border: 1px solid rgba(46, 98, 123, 0.45);
+      border-radius: 10px;
+      background: rgba(7, 19, 26, 0.42);
+      padding: 8px;
+      margin-top: 6px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .llm-block-title {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #b4d9ea;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .llm-list {
+      display: grid;
+      gap: 5px;
+      font-size: 11px;
+      color: #d4e9f3;
+      line-height: 1.45;
+    }
+
+    .llm-list div {
+      border-left: 2px solid rgba(65, 184, 240, 0.45);
+      padding-left: 7px;
+    }
+
+    .insight-meta {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .detail {
+      min-width: 0;
+    }
+
+    .detail-header {
+      border-bottom: 1px solid var(--line);
+      padding: 12px 14px;
+      background: rgba(7, 19, 26, 0.35);
+    }
+
+    .detail-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .detail-sub {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .detail-body {
+      overflow: auto;
+      padding: 12px 14px 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .detail-block {
+      border: 1px solid rgba(46, 98, 123, 0.5);
+      border-radius: 11px;
+      background: rgba(7, 19, 26, 0.45);
+      padding: 10px;
+    }
+
+    .detail-block h4 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    .kv {
+      display: grid;
+      grid-template-columns: 108px 1fr;
+      gap: 6px 8px;
+      font-size: 11px;
+    }
+
+    .kv .k { color: var(--muted); }
+
+    .code {
+      font-size: 10px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border: 1px solid rgba(46, 98, 123, 0.45);
+      border-radius: 10px;
+      background: rgba(7, 19, 26, 0.7);
+      padding: 8px;
+      color: #cfe9f3;
+      max-height: 200px;
+      overflow: auto;
+    }
+
+    .bullet-list {
+      display: grid;
+      gap: 6px;
+      font-size: 11px;
+      color: #cbe1ea;
+      line-height: 1.5;
+    }
+
+    .bullet-list div {
+      border-left: 2px solid rgba(31, 198, 166, 0.4);
+      padding-left: 8px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      max-width: 420px;
+      border: 1px solid rgba(46, 98, 123, 0.75);
+      border-radius: 11px;
+      background: rgba(7, 19, 26, 0.96);
+      color: #dff5ff;
+      padding: 10px 12px;
+      font-size: 11px;
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      z-index: 100;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.error {
+      border-color: rgba(255, 106, 106, 0.8);
+      color: #ffd0d0;
+    }
+
+    .toast.success {
+      border-color: rgba(101, 212, 135, 0.7);
+      color: #d9f7e2;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 1500px) {
+      .layout {
+        grid-template-columns: 280px 1fr 330px;
+      }
+    }
+
+    @media (max-width: 1200px) {
+      .metrics {
+        grid-template-columns: repeat(3, minmax(120px, 1fr));
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+        overflow: auto;
+      }
+
+      .panel {
+        min-height: 340px;
+      }
+
+      .type-list {
+        max-height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-badge">NX</div>
+      <div>
+        <div class="brand-title">NexTrace Pro</div>
+        <div class="brand-sub">Pega Rule Runtime Intelligence</div>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <button id="btnImport" class="btn primary">Import XML / JSON</button>
+      <button id="btnDemo" class="btn">Generate Demo Trace</button>
+      <button id="btnExport" class="btn warn">Export Filtered JSON</button>
+      <button id="btnReset" class="btn danger">Reset Session</button>
+    </div>
+
+    <div class="status-pill" id="statusPill">idle</div>
+    <input id="fileInput" class="hidden" type="file" accept=".xml,.json,.txt" />
+  </header>
+
+  <section class="metrics">
+    <div class="metric">
+      <div class="label">Total Events</div>
+      <div class="value" id="metricTotal">0</div>
+    </div>
+    <div class="metric">
+      <div class="label">Failures</div>
+      <div class="value danger" id="metricFail">0</div>
+    </div>
+    <div class="metric">
+      <div class="label">Slow Events</div>
+      <div class="value warn" id="metricSlow">0</div>
+    </div>
+    <div class="metric">
+      <div class="label">Unique Rules</div>
+      <div class="value ok" id="metricRules">0</div>
+    </div>
+    <div class="metric">
+      <div class="label">Avg Latency</div>
+      <div class="value" id="metricAvg">0ms</div>
+    </div>
+  </section>
+
+  <section class="layout">
+    <aside class="panel">
+      <div class="panel-title">Rule Filters (All Rule Families)</div>
+      <div class="filter-section">
+        <div class="filter-actions">
+          <button class="tiny" id="btnSelectAllTypes">Select All</button>
+          <button class="tiny" id="btnClearAllTypes">Clear All</button>
+        </div>
+        <div class="type-list" id="typeFilterList"></div>
+      </div>
+
+      <div class="panel-title">Status Filters</div>
+      <div class="filter-section" id="statusFilterWrap">
+        <label class="status-item"><input type="checkbox" data-status="pass" checked /> Pass</label>
+        <label class="status-item"><input type="checkbox" data-status="warn" checked /> Warn</label>
+        <label class="status-item"><input type="checkbox" data-status="fail" checked /> Fail</label>
+      </div>
+
+      <div class="panel-title">Noise Controls</div>
+      <div class="filter-section">
+        <label class="switch-item"><input id="onlyException" type="checkbox" /> Exception/Fault only</label>
+        <label class="switch-item"><input id="onlySlow" type="checkbox" /> Slow only</label>
+        <label class="switch-item"><input id="collapseRepeated" type="checkbox" /> Collapse repeated patterns</label>
+      </div>
+
+      <div class="panel-title">Pega Pain Points Fixed</div>
+      <div class="filter-section">
+        <div class="pain-list">
+          <div>Noise overload: collapse repeats, quick exception mode, smart thresholds.</div>
+          <div>Missing sequence clarity: synchronized SVG flow with clickable nodes.</div>
+          <div>Weak root-cause cues: AI diagnostics combine message, rule type, and context chain.</div>
+          <div>Partial taxonomy filters: full rule-catalog filters instead of static subsets.</div>
+          <div>Slow issue triage: automatic incident board sorted by severity and confidence.</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="panel work">
+      <div class="work-toolbar">
+        <input id="searchInput" type="text" placeholder="Search rule/message/class (regex: /.../)" />
+        <select id="threadFilter"><option value="ALL">All Threads</option></select>
+        <label>
+          <span style="font-size:10px;color:var(--muted);margin-right:4px">Min depth</span>
+          <input id="minDepth" type="number" value="0" min="0" max="99" style="width:72px" />
+        </label>
+        <label>
+          <span style="font-size:10px;color:var(--muted);margin-right:4px">Slow ms</span>
+          <input id="slowThreshold" type="number" value="220" min="1" style="width:82px" />
+        </label>
+        <button id="btnFocusFailures" class="tiny">Focus Fails</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="events">Event Stream</button>
+        <button class="tab" data-tab="sequence">Sequential Filter Diagram</button>
+        <button class="tab" data-tab="insights">AI Insights</button>
+      </div>
+
+      <div class="tab-panels">
+        <section class="tab-panel active" id="tab-events">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Time</th>
+                <th>Latency</th>
+                <th>Status</th>
+                <th>Type</th>
+                <th>Rule</th>
+                <th>Class</th>
+                <th>Thread</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody id="eventRows"></tbody>
+          </table>
+        </section>
+
+        <section class="tab-panel" id="tab-sequence">
+          <div id="sequenceHost"></div>
+        </section>
+
+        <section class="tab-panel" id="tab-insights">
+          <div class="llm-bar">
+            <div class="llm-grid">
+              <div class="llm-item">
+                <label for="llmEndpoint">LLM Endpoint</label>
+                <input id="llmEndpoint" type="text" value="https://api.openai.com/v1/chat/completions" />
+              </div>
+              <div class="llm-item">
+                <label for="llmModel">Model</label>
+                <input id="llmModel" type="text" value="gpt-4o-mini" />
+              </div>
+              <div class="llm-item">
+                <label for="llmApiKey">API Key (runtime only)</label>
+                <input id="llmApiKey" type="password" placeholder="sk-..." />
+              </div>
+            </div>
+            <div class="llm-actions">
+              <button id="btnLLMSave" class="tiny">Save LLM Config</button>
+              <button id="btnLLMEnrich" class="tiny">Enrich Insights with LLM</button>
+              <button id="btnLLMStop" class="tiny">Stop</button>
+              <span id="llmStatus" class="llm-note">LLM mode: heuristic only</span>
+            </div>
+            <div class="llm-note">
+              Uses an OpenAI-compatible Chat Completions endpoint. API key is kept in memory for this page session.
+              Endpoint and model are saved in <code>localStorage</code>.
+            </div>
+          </div>
+          <div id="insightFeed"></div>
+        </section>
+      </div>
+    </main>
+
+    <aside class="panel detail">
+      <div class="detail-header">
+        <div class="detail-title" id="detailTitle">Event Detail</div>
+        <div class="detail-sub" id="detailSub">Select a row or sequence node</div>
+      </div>
+      <div class="detail-body" id="detailBody">
+        <div class="detail-block">
+          <h4>How to use</h4>
+          <div class="bullet-list">
+            <div>Import a Pega tracer XML export or a JSON event set.</div>
+            <div>Enable filters on the left; the table and sequence diagram stay synchronized.</div>
+            <div>Failures automatically generate root-cause and remediation suggestions.</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const RULE_CATALOG = [
+      { key: 'Activity', label: 'Activity', group: 'Case Processing', color: '#56c9ff' },
+      { key: 'Flow', label: 'Flow', group: 'Case Processing', color: '#6ce39a' },
+      { key: 'FlowAction', label: 'Flow Action', group: 'Case Processing', color: '#97e9b7' },
+      { key: 'Stage', label: 'Stage', group: 'Case Processing', color: '#58d18f' },
+      { key: 'Assignment', label: 'Assignment', group: 'Case Processing', color: '#48bf83' },
+      { key: 'Router', label: 'Router', group: 'Case Processing', color: '#9ed473' },
+      { key: 'ServiceLevel', label: 'Service Level', group: 'Case Processing', color: '#d6e47b' },
+      { key: 'CaseType', label: 'Case Type', group: 'Case Processing', color: '#8ed0d9' },
+      { key: 'Subflow', label: 'Subflow', group: 'Case Processing', color: '#6adca0' },
+      { key: 'UtilityShape', label: 'Utility Shape', group: 'Case Processing', color: '#6cdeb9' },
+
+      { key: 'DataTransform', label: 'Data Transform', group: 'Data & Clipboard', color: '#4ab6ff' },
+      { key: 'DataPage', label: 'Data Page', group: 'Data & Clipboard', color: '#6b9cff' },
+      { key: 'DeclareExpression', label: 'Declare Expression', group: 'Data & Clipboard', color: '#77b3ff' },
+      { key: 'DeclareTrigger', label: 'Declare Trigger', group: 'Data & Clipboard', color: '#8594ff' },
+      { key: 'DeclareIndex', label: 'Declare Index', group: 'Data & Clipboard', color: '#98a2ff' },
+      { key: 'Property', label: 'Property', group: 'Data & Clipboard', color: '#9cc2ff' },
+      { key: 'FieldValue', label: 'Field Value', group: 'Data & Clipboard', color: '#96b7d6' },
+
+      { key: 'DecisionTable', label: 'Decision Table', group: 'Decisioning', color: '#ffd279' },
+      { key: 'DecisionTree', label: 'Decision Tree', group: 'Decisioning', color: '#ffbc6a' },
+      { key: 'MapValue', label: 'Map Value', group: 'Decisioning', color: '#ff9f66' },
+      { key: 'When', label: 'When', group: 'Decisioning', color: '#ffd777' },
+      { key: 'DecisionStrategy', label: 'Decision Strategy', group: 'Decisioning', color: '#ffae6e' },
+      { key: 'Scorecard', label: 'Scorecard', group: 'Decisioning', color: '#ffd08a' },
+
+      { key: 'Validate', label: 'Validate', group: 'Validation', color: '#ff8f8f' },
+      { key: 'EditValidate', label: 'Edit Validate', group: 'Validation', color: '#ff7676' },
+      { key: 'Constraint', label: 'Constraint', group: 'Validation', color: '#ff5959' },
+
+      { key: 'ConnectorREST', label: 'Connector REST', group: 'Integration', color: '#8ac5ff' },
+      { key: 'ConnectorSOAP', label: 'Connector SOAP', group: 'Integration', color: '#78b0ff' },
+      { key: 'ConnectorJMS', label: 'Connector JMS', group: 'Integration', color: '#6f9de3' },
+      { key: 'ServiceREST', label: 'Service REST', group: 'Integration', color: '#7bcfff' },
+      { key: 'ServiceSOAP', label: 'Service SOAP', group: 'Integration', color: '#7ec3ef' },
+      { key: 'ServiceFile', label: 'Service File', group: 'Integration', color: '#66a7d4' },
+      { key: 'IntegrationMapping', label: 'Integration Mapping', group: 'Integration', color: '#74bae0' },
+
+      { key: 'Section', label: 'Section', group: 'UI', color: '#9ad8d2' },
+      { key: 'Harness', label: 'Harness', group: 'UI', color: '#85c9be' },
+      { key: 'Portal', label: 'Portal', group: 'UI', color: '#9adfbe' },
+      { key: 'Paragraph', label: 'Paragraph', group: 'UI', color: '#7cbda1' },
+      { key: 'Control', label: 'Control', group: 'UI', color: '#73c6ac' },
+
+      { key: 'ReportDefinition', label: 'Report Definition', group: 'Reports', color: '#d6d18a' },
+      { key: 'ListView', label: 'List View', group: 'Reports', color: '#ccb87a' },
+      { key: 'SummaryView', label: 'Summary View', group: 'Reports', color: '#d9cb9d' },
+
+      { key: 'Correspondence', label: 'Correspondence', group: 'Background & Messaging', color: '#85d8ff' },
+      { key: 'Notification', label: 'Notification', group: 'Background & Messaging', color: '#78c7e8' },
+      { key: 'QueueProcessor', label: 'Queue Processor', group: 'Background & Messaging', color: '#5dbad1' },
+      { key: 'JobScheduler', label: 'Job Scheduler', group: 'Background & Messaging', color: '#7fc6bc' },
+      { key: 'Agent', label: 'Agent', group: 'Background & Messaging', color: '#7faec2' },
+      { key: 'Library', label: 'Library', group: 'Background & Messaging', color: '#96b3cc' },
+      { key: 'Function', label: 'Function', group: 'Background & Messaging', color: '#a2bbd8' },
+      { key: 'AuthenticationProfile', label: 'Authentication Profile', group: 'Background & Messaging', color: '#74b8e8' }
+    ];
+
+    const TYPE_ALIAS = {
+      activity: 'Activity',
+      flow: 'Flow',
+      flowaction: 'FlowAction',
+      flowshape: 'FlowAction',
+      stage: 'Stage',
+      assignment: 'Assignment',
+      router: 'Router',
+      servicelevel: 'ServiceLevel',
+      sla: 'ServiceLevel',
+      casetype: 'CaseType',
+      subflow: 'Subflow',
+      utility: 'UtilityShape',
+      utilityshape: 'UtilityShape',
+
+      datatransform: 'DataTransform',
+      transform: 'DataTransform',
+      datapage: 'DataPage',
+      declareexpression: 'DeclareExpression',
+      expression: 'DeclareExpression',
+      declaretrigger: 'DeclareTrigger',
+      declareindex: 'DeclareIndex',
+      property: 'Property',
+      fieldvalue: 'FieldValue',
+
+      decisiontable: 'DecisionTable',
+      decisiontree: 'DecisionTree',
+      mapvalue: 'MapValue',
+      when: 'When',
+      decisionstrategy: 'DecisionStrategy',
+      strategy: 'DecisionStrategy',
+      scorecard: 'Scorecard',
+
+      validate: 'Validate',
+      validation: 'Validate',
+      editvalidate: 'EditValidate',
+      edit: 'EditValidate',
+      constraint: 'Constraint',
+
+      connectorrest: 'ConnectorREST',
+      connectrest: 'ConnectorREST',
+      connectorsoap: 'ConnectorSOAP',
+      connectsoap: 'ConnectorSOAP',
+      connectorjms: 'ConnectorJMS',
+      connectjms: 'ConnectorJMS',
+      servicerest: 'ServiceREST',
+      servicesoap: 'ServiceSOAP',
+      servicefile: 'ServiceFile',
+      mapping: 'IntegrationMapping',
+      integrationmapping: 'IntegrationMapping',
+
+      section: 'Section',
+      harness: 'Harness',
+      portal: 'Portal',
+      paragraph: 'Paragraph',
+      control: 'Control',
+
+      reportdefinition: 'ReportDefinition',
+      listview: 'ListView',
+      summaryview: 'SummaryView',
+
+      correspondence: 'Correspondence',
+      notification: 'Notification',
+      queueprocessor: 'QueueProcessor',
+      jobscheduler: 'JobScheduler',
+      agent: 'Agent',
+      library: 'Library',
+      function: 'Function',
+      authenticationprofile: 'AuthenticationProfile'
+    };
+
+    const state = {
+      events: [],
+      filtered: [],
+      selectedSeq: null,
+      activeTypes: new Set(RULE_CATALOG.map((r) => r.key)),
+      activeStatuses: new Set(['pass', 'warn', 'fail']),
+      onlyException: false,
+      onlySlow: false,
+      collapseRepeated: false,
+      search: '',
+      minDepth: 0,
+      thread: 'ALL',
+      slowThreshold: 220,
+      toastTimer: null,
+      llm: {
+        endpoint: 'https://api.openai.com/v1/chat/completions',
+        model: 'gpt-4o-mini',
+        apiKey: ''
+      },
+      llmBusy: false,
+      llmAbortController: null,
+      llmEnrichment: {}
+    };
+
+    function showToast(message, mode = '') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast show ${mode}`.trim();
+      clearTimeout(state.toastTimer);
+      state.toastTimer = setTimeout(() => {
+        toast.className = 'toast';
+      }, 2900);
+    }
+
+    function updateLLMStatus(text, tone = '') {
+      const el = document.getElementById('llmStatus');
+      if (!el) return;
+      el.textContent = text;
+      el.style.color = tone === 'error' ? 'var(--danger)' : tone === 'ok' ? 'var(--ok)' : 'var(--muted)';
+    }
+
+    function setLLMBusy(isBusy) {
+      state.llmBusy = isBusy;
+      const enrich = document.getElementById('btnLLMEnrich');
+      const stop = document.getElementById('btnLLMStop');
+      const save = document.getElementById('btnLLMSave');
+      if (enrich) {
+        enrich.disabled = isBusy;
+        enrich.textContent = isBusy ? 'Enriching...' : 'Enrich Insights with LLM';
+      }
+      if (save) save.disabled = isBusy;
+      if (stop) stop.disabled = !isBusy;
+    }
+
+    function loadLLMConfig() {
+      try {
+        const raw = localStorage.getItem('nextrace.llm.config');
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed.endpoint) state.llm.endpoint = parsed.endpoint;
+        if (parsed.model) state.llm.model = parsed.model;
+      } catch (_err) {
+        // Ignore invalid cached config and continue with defaults.
+      }
+    }
+
+    function syncLLMInputs() {
+      const endpoint = document.getElementById('llmEndpoint');
+      const model = document.getElementById('llmModel');
+      const apiKey = document.getElementById('llmApiKey');
+      if (endpoint) endpoint.value = state.llm.endpoint;
+      if (model) model.value = state.llm.model;
+      if (apiKey) apiKey.value = state.llm.apiKey;
+      updateLLMStatus(state.llm.apiKey ? 'LLM mode: ready for live enrichment' : 'LLM mode: heuristic only', state.llm.apiKey ? 'ok' : '');
+    }
+
+    function pullLLMFromInputs() {
+      const endpointEl = document.getElementById('llmEndpoint');
+      const modelEl = document.getElementById('llmModel');
+      const apiKeyEl = document.getElementById('llmApiKey');
+      state.llm.endpoint = (endpointEl?.value || '').trim() || 'https://api.openai.com/v1/chat/completions';
+      state.llm.model = (modelEl?.value || '').trim() || 'gpt-4o-mini';
+      state.llm.apiKey = (apiKeyEl?.value || '').trim();
+      updateLLMStatus(state.llm.apiKey ? 'LLM mode: ready for live enrichment' : 'LLM mode: heuristic only', state.llm.apiKey ? 'ok' : '');
+    }
+
+    function saveLLMConfig() {
+      pullLLMFromInputs();
+      const payload = {
+        endpoint: state.llm.endpoint,
+        model: state.llm.model
+      };
+      try {
+        localStorage.setItem('nextrace.llm.config', JSON.stringify(payload));
+        showToast('LLM endpoint/model saved. API key remains session-only.', 'success');
+      } catch (_err) {
+        showToast('Could not save endpoint/model to localStorage. Using runtime values only.');
+      }
+    }
+
+    function colorForType(type) {
+      const found = RULE_CATALOG.find((r) => r.key === type);
+      return found ? found.color : '#9ac8d6';
+    }
+
+    function labelForType(type) {
+      const found = RULE_CATALOG.find((r) => r.key === type);
+      return found ? found.label : type;
+    }
+
+    function normalizeType(raw) {
+      if (!raw) return 'Activity';
+      const compact = String(raw).trim().toLowerCase().replace(/[\s\-_:.]/g, '');
+      if (TYPE_ALIAS[compact]) return TYPE_ALIAS[compact];
+      if (compact.includes('datapage')) return 'DataPage';
+      if (compact.includes('rest') && compact.includes('connector')) return 'ConnectorREST';
+      if (compact.includes('soap') && compact.includes('connector')) return 'ConnectorSOAP';
+      if (compact.includes('queue')) return 'QueueProcessor';
+      if (compact.includes('report')) return 'ReportDefinition';
+      if (compact.includes('validate')) return 'Validate';
+      return raw;
+    }
+
+    function normalizeStatus(rawStatus, rawEventType, hasException, message) {
+      const status = (rawStatus || '').toLowerCase();
+      const eventType = (rawEventType || '').toLowerCase();
+      const exc = String(hasException || '').toLowerCase();
+      const msg = (message || '').toLowerCase();
+
+      if (exc === 'true' || exc === '1' || exc === 'yes') return 'fail';
+      if (['exception', 'error', 'thrown', 'fault', 'failed', 'abort'].some((x) => eventType.includes(x))) return 'fail';
+      if (['fail', 'failed', 'false', '0', 'exception', 'error', 'fault', 'fatal'].some((x) => status.includes(x))) return 'fail';
+      if (['warn', 'warning', 'partial', 'degraded', 'retry'].some((x) => status.includes(x))) return 'warn';
+      if (['timeout', 'null pointer', 'not found', 'missing', 'no such', 'validation failed'].some((x) => msg.includes(x))) return 'fail';
+      return 'pass';
+    }
+
+    function parseElapsed(raw) {
+      if (raw === null || raw === undefined) return 0;
+      const str = String(raw).trim().toLowerCase();
+      const numeric = parseFloat(str.replace(/[^\d.]/g, ''));
+      if (Number.isNaN(numeric)) return 0;
+      if (str.includes('us')) return Math.round(numeric / 1000);
+      if (str.includes('ns')) return Math.round(numeric / 1000000);
+      if (str.includes('ms')) return Math.round(numeric);
+      if (numeric > 10000) return Math.round(numeric / 1000);
+      return Math.round(numeric);
+    }
+
+    function parseTime(raw) {
+      if (!raw) return new Date();
+      const tryTime = new Date(raw);
+      if (!Number.isNaN(tryTime.getTime())) return tryTime;
+      const cleaned = String(raw).replace(/\.(\d{3})\d+/, '.$1');
+      const secondTry = new Date(cleaned);
+      if (!Number.isNaN(secondTry.getTime())) return secondTry;
+      return new Date();
+    }
+
+    function readableTime(date) {
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '-';
+      return `${date.toLocaleTimeString('en-GB', { hour12: false })}.${String(date.getMilliseconds()).padStart(3, '0')}`;
+    }
+
+    function safeText(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getTagValue(node, keys) {
+      const children = node.getElementsByTagName('*');
+      const keySet = keys.map((k) => k.toLowerCase());
+      for (let i = 0; i < children.length; i += 1) {
+        const local = (children[i].localName || children[i].tagName || '').toLowerCase();
+        const compact = local.replace(/[:\s\-_]/g, '');
+        for (let j = 0; j < keySet.length; j += 1) {
+          const k = keySet[j].replace(/[:\s\-_]/g, '');
+          if (compact === k) {
+            const text = children[i].textContent.trim();
+            if (text) return text;
+          }
+        }
+      }
+      return '';
+    }
+
+    function getAttrValue(node, keys) {
+      for (let i = 0; i < keys.length; i += 1) {
+        const k = keys[i];
+        const direct = node.getAttribute(k);
+        const low = node.getAttribute(k.toLowerCase());
+        const up = node.getAttribute(k.toUpperCase());
+        const value = direct || low || up;
+        if (value) return value.trim();
+      }
+      return '';
+    }
+
+    function makeEvent(seq, patch) {
+      return {
+        seq,
+        time: patch.time || new Date(),
+        elapsedMs: patch.elapsedMs || 0,
+        type: patch.type || 'Activity',
+        name: patch.name || '(unnamed)',
+        className: patch.className || '(no class)',
+        status: patch.status || 'pass',
+        depth: Number.isFinite(patch.depth) ? patch.depth : 0,
+        thread: patch.thread || 'MAIN',
+        message: patch.message || '-',
+        step: patch.step || '',
+        stepMethod: patch.stepMethod || '',
+        stepPage: patch.stepPage || '',
+        props: patch.props || {},
+        exception: patch.exception || null,
+        raw: patch.raw || {}
+      };
+    }
+
+    function annotateParentLinks(events) {
+      const stacks = {};
+      events.forEach((ev) => {
+        const thread = ev.thread || 'MAIN';
+        if (!stacks[thread]) stacks[thread] = [];
+        const stack = stacks[thread];
+        while (stack.length > ev.depth) stack.pop();
+        ev.parentSeq = ev.depth > 0 && stack[ev.depth - 1] ? stack[ev.depth - 1].seq : null;
+        stack[ev.depth] = ev;
+      });
+    }
+
+    function syncCatalogWithImportedTypes() {
+      const known = new Set(RULE_CATALOG.map((item) => item.key));
+      state.events.forEach((ev) => {
+        if (!known.has(ev.type)) {
+          RULE_CATALOG.push({
+            key: ev.type,
+            label: ev.type,
+            group: 'Imported / Unknown',
+            color: '#88b7ca'
+          });
+          known.add(ev.type);
+          state.activeTypes.add(ev.type);
+        }
+      });
+    }
+
+    function parsePegaXml(xmlText) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xmlText, 'application/xml');
+      const parseError = doc.querySelector('parsererror');
+      if (parseError) {
+        throw new Error(`Invalid XML: ${parseError.textContent.slice(0, 120)}`);
+      }
+
+      let nodes = Array.from(doc.getElementsByTagName('TraceEvent'));
+      let format = 'TraceEvent';
+      if (!nodes.length) {
+        nodes = Array.from(doc.getElementsByTagName('traceevent'));
+      }
+      if (!nodes.length) {
+        nodes = Array.from(doc.getElementsByTagName('pega:event'));
+        format = 'pega:event';
+      }
+      if (!nodes.length) {
+        const trace = doc.getElementsByTagName('trace')[0] || doc.getElementsByTagName('prpctrace')[0];
+        if (trace) {
+          nodes = Array.from(trace.getElementsByTagName('event'));
+          format = 'trace/event';
+        }
+      }
+      if (!nodes.length) {
+        nodes = Array.from(doc.getElementsByTagName('event'));
+        format = 'event';
+      }
+      if (!nodes.length) {
+        const all = Array.from(doc.getElementsByTagName('*'));
+        const counts = {};
+        all.forEach((el) => {
+          const key = (el.localName || el.tagName || '').toLowerCase();
+          counts[key] = (counts[key] || 0) + 1;
+        });
+        const repeated = Object.entries(counts)
+          .filter(([k, v]) => v > 2 && !['trace', 'traceevents', 'root', 'data', 'result', 'results'].includes(k))
+          .sort((a, b) => b[1] - a[1])[0];
+        if (repeated) {
+          nodes = Array.from(doc.getElementsByTagName(repeated[0]));
+          format = `fallback:${repeated[0]}`;
+        }
+      }
+
+      if (!nodes.length) {
+        throw new Error('No event nodes found in XML trace file.');
+      }
+
+      const events = [];
+      nodes.forEach((node, idx) => {
+        const rawType =
+          getTagValue(node, ['RuleType', 'ruletype', 'type', 'pyRuleType']) ||
+          getAttrValue(node, ['type', 'ruletype', 'ruleType']);
+        const type = normalizeType(rawType || 'Activity');
+
+        const name =
+          getTagValue(node, ['RuleName', 'rulename', 'pyRuleName', 'name', 'label', 'pyLabel', 'insName']) ||
+          getAttrValue(node, ['name', 'rulename', 'ruleName']) ||
+          '(unnamed)';
+
+        const className =
+          getTagValue(node, ['RuleClass', 'ruleclass', 'pyClassName', 'pxObjClass', 'class']) ||
+          getAttrValue(node, ['class', 'ruleclass']) ||
+          '(no class)';
+
+        const rawTime =
+          getTagValue(node, ['StartTime', 'starttime', 'EventTime', 'eventtime', 'Timestamp', 'timestamp']) ||
+          getAttrValue(node, ['time', 'timestamp', 'starttime']);
+
+        const rawElapsed =
+          getTagValue(node, ['Elapsed', 'elapsed', 'Duration', 'duration', 'ElapsedTime', 'elapsedtime', 'ExecTime']) ||
+          getAttrValue(node, ['elapsed', 'duration', 'ms', 'time']);
+
+        const message =
+          getTagValue(node, ['Message', 'message', 'MessageText', 'description', 'detail', 'EventMessage']) ||
+          '-';
+
+        const rawStatus =
+          getTagValue(node, ['Status', 'status', 'Result', 'result', 'EventStatus', 'eventstatus', 'Outcome']) ||
+          getAttrValue(node, ['status', 'result', 'outcome']);
+
+        const rawEventType =
+          getTagValue(node, ['EventType', 'eventtype', 'TraceEventType', 'traceeventtype']) ||
+          getAttrValue(node, ['eventtype', 'traceeventtype']);
+
+        const hasException =
+          getTagValue(node, ['HasException', 'hasexception', 'ExceptionOccurred', 'exceptionoccurred', 'HasError']) ||
+          getAttrValue(node, ['hasexception', 'exceptionoccurred', 'haserror']);
+
+        const depthRaw =
+          getTagValue(node, ['Depth', 'depth', 'CallDepth', 'calldepth', 'level']) ||
+          getAttrValue(node, ['depth', 'calldepth', 'level']);
+
+        const step =
+          getTagValue(node, ['StepNumber', 'stepnumber', 'Step', 'step', 'StepNum']) ||
+          getAttrValue(node, ['step', 'stepnumber']);
+
+        const stepMethod =
+          getTagValue(node, ['StepMethod', 'stepmethod', 'Method', 'method', 'StepAction']) ||
+          getAttrValue(node, ['method', 'stepmethod']);
+
+        const stepPage =
+          getTagValue(node, ['StepPage', 'steppage', 'Page', 'page', 'ContextPage']) ||
+          getAttrValue(node, ['page', 'steppage']);
+
+        const thread =
+          getTagValue(node, ['ThreadID', 'threadid', 'Thread', 'thread', 'pxThread']) ||
+          getAttrValue(node, ['thread', 'threadid']) ||
+          'MAIN';
+
+        const exceptionMessage =
+          getTagValue(node, ['ExceptionMessage', 'exceptionmessage', 'Exception', 'exception', 'ErrorMessage', 'error']) ||
+          '';
+
+        const exceptionCode =
+          getTagValue(node, ['ExceptionCode', 'exceptioncode', 'ErrorCode', 'errorcode', 'StatusCode']) ||
+          '';
+
+        const stack =
+          getTagValue(node, ['StackTrace', 'stacktrace', 'ExceptionStack', 'CallStack', 'JavaStackTrace']) ||
+          '';
+
+        const status = normalizeStatus(rawStatus, rawEventType, hasException, `${message} ${exceptionMessage}`);
+
+        let exception = null;
+        if (status === 'fail' || exceptionMessage) {
+          exception = {
+            code: exceptionCode || 'TRACE-EXCEPTION',
+            message: exceptionMessage || message || 'Failure without explicit message',
+            stack: stack || `at ${className}.${name}${step ? ` step ${step}` : ''}`,
+            rawEventType: rawEventType || ''
+          };
+        }
+
+        const props = {
+          RuleTypeRaw: rawType || '-',
+          EventTypeRaw: rawEventType || '-',
+          StatusRaw: rawStatus || '-',
+          HasExceptionRaw: hasException || '-',
+          Step: step || '-',
+          StepMethod: stepMethod || '-',
+          StepPage: stepPage || '-'
+        };
+
+        events.push(makeEvent(idx + 1, {
+          time: parseTime(rawTime),
+          elapsedMs: parseElapsed(rawElapsed),
+          type,
+          name,
+          className,
+          status,
+          depth: Math.max(0, Math.min(99, parseInt(depthRaw || '0', 10) || 0)),
+          thread,
+          message,
+          step,
+          stepMethod,
+          stepPage,
+          props,
+          exception,
+          raw: {
+            rawType,
+            rawStatus,
+            rawEventType,
+            hasException,
+            format
+          }
+        }));
+      });
+
+      annotateParentLinks(events);
+      return { events, format };
+    }
+
+    function parseJsonEvents(text) {
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (err) {
+        throw new Error('Invalid JSON input.');
+      }
+
+      const source = Array.isArray(parsed) ? parsed : Array.isArray(parsed.events) ? parsed.events : [];
+      if (!source.length) {
+        throw new Error('JSON did not include an events array.');
+      }
+
+      const events = source.map((raw, idx) => {
+        const status = normalizeStatus(raw.status, raw.eventType, raw.hasException, raw.message || raw.msg || '');
+        const type = normalizeType(raw.type || raw.ruleType || raw.rule || 'Activity');
+        const exceptionMessage = raw.exception?.message || raw.exception?.msg || raw.exceptionMessage || '';
+
+        return makeEvent(idx + 1, {
+          time: parseTime(raw.time || raw.timestamp || raw.startTime),
+          elapsedMs: parseElapsed(raw.elapsedMs || raw.delta || raw.elapsed || raw.duration || 0),
+          type,
+          name: raw.name || raw.ruleName || '(unnamed)',
+          className: raw.className || raw.cls || raw.ruleClass || '(no class)',
+          status,
+          depth: Math.max(0, parseInt(raw.depth || 0, 10) || 0),
+          thread: raw.thread || raw.threadId || 'MAIN',
+          message: raw.message || raw.msg || '-',
+          step: raw.step || raw.stepNum || '',
+          stepMethod: raw.stepMethod || '',
+          stepPage: raw.stepPage || '',
+          props: raw.props || {},
+          exception: status === 'fail' || exceptionMessage ? {
+            code: raw.exception?.code || raw.errorCode || 'TRACE-EXCEPTION',
+            message: exceptionMessage || raw.message || 'Failure without explicit message',
+            stack: raw.exception?.stack || raw.stackTrace || `at ${raw.className || raw.cls || 'Unknown'}.${raw.name || raw.ruleName || 'Unnamed'}`,
+            rawEventType: raw.eventType || '-'
+          } : null,
+          raw
+        });
+      });
+
+      annotateParentLinks(events);
+      return { events, format: 'json' };
+    }
+
+    function generateDemoTrace() {
+      const scenario = [
+        { type: 'Flow', name: 'NewCase', depth: 0, cls: 'Work-MyCo-Claim', msg: 'Case lifecycle started' },
+        { type: 'Activity', name: 'InitializeCase', depth: 1, cls: 'Work-MyCo-Claim', msg: 'Primary page initialized' },
+        { type: 'DataTransform', name: 'SetDefaults', depth: 2, cls: 'Work-MyCo-Claim', msg: 'Default fields populated' },
+        { type: 'DecisionTable', name: 'DetermineChannel', depth: 2, cls: 'Work-MyCo-Claim', msg: 'Decision branch selected' },
+        { type: 'DataPage', name: 'D_Customer', depth: 1, cls: 'Data-Customer', msg: 'Customer profile requested' },
+        { type: 'ConnectorREST', name: 'GetPolicyData', depth: 2, cls: 'Int-REST', msg: 'Calling /policy/details endpoint' },
+        { type: 'Validate', name: 'ValidateSubmit', depth: 1, cls: 'Work-MyCo-Claim', msg: 'Required fields checked' },
+        { type: 'FlowAction', name: 'SubmitClaim', depth: 1, cls: 'Work-MyCo-Claim', msg: 'Flow action executed' },
+        { type: 'QueueProcessor', name: 'SendFraudCheck', depth: 0, cls: 'Work-Background', msg: 'Queued for async fraud analysis' },
+        { type: 'ServiceLevel', name: 'SLA-Review', depth: 0, cls: 'Work-MyCo-Claim', msg: 'Deadline monitoring armed' }
+      ];
+
+      const threads = ['REQ-01', 'REQ-02', 'ASYNC-01'];
+      const now = Date.now();
+      const events = [];
+      let seq = 1;
+
+      for (let i = 0; i < 160; i += 1) {
+        const model = scenario[Math.floor(Math.random() * scenario.length)];
+        const jitter = Math.max(3, Math.round(Math.random() * 480));
+        const statusRoll = Math.random();
+        let status = 'pass';
+        if (statusRoll > 0.9) status = 'fail';
+        else if (statusRoll > 0.78) status = 'warn';
+
+        let message = model.msg;
+        let exception = null;
+
+        if (status === 'fail') {
+          const failurePatterns = [
+            { msg: 'Obj-Open failed: instance not found for key CLM-20029', code: 'RO-25104' },
+            { msg: 'Connector timeout after 5000ms contacting /policy/details', code: 'INT-504' },
+            { msg: 'Null page reference at Step 5 while evaluating .Policy.CustomerID', code: 'PR-NULLPAGE' },
+            { msg: 'Validation failed: .CustomerID is mandatory', code: 'VAL-0008' },
+            { msg: 'Lock contention detected on work object; update aborted', code: 'LOCK-409' }
+          ];
+          const chosen = failurePatterns[Math.floor(Math.random() * failurePatterns.length)];
+          message = chosen.msg;
+          exception = {
+            code: chosen.code,
+            message: chosen.msg,
+            stack: `at ${model.cls}.${model.name}\n at Step ${Math.max(1, model.depth + 1)}\n at ThreadEngine.run(${threads[i % threads.length]})`,
+            rawEventType: 'exception'
+          };
+        }
+
+        events.push(makeEvent(seq, {
+          time: new Date(now + i * 380 + Math.round(Math.random() * 120)),
+          elapsedMs: jitter,
+          type: model.type,
+          name: model.name,
+          className: model.cls,
+          status,
+          depth: Math.min(6, Math.max(0, model.depth + (Math.random() > 0.85 ? 1 : 0))),
+          thread: threads[i % threads.length],
+          message,
+          step: String(Math.max(1, model.depth + 1)),
+          stepMethod: ['Obj-Open', 'Obj-Save', 'Property-Set', 'Call', 'Queue-For-Processing'][i % 5],
+          stepPage: ['pyWorkPage', 'D_Customer', 'pyTempPage'][i % 3],
+          props: {
+            pyRuleName: model.name,
+            pyClassName: model.cls,
+            pxThread: threads[i % threads.length],
+            pyRuleType: model.type
+          },
+          exception,
+          raw: { demo: true }
+        }));
+        seq += 1;
+      }
+
+      events.sort((a, b) => a.seq - b.seq);
+      annotateParentLinks(events);
+      return events;
+    }
+
+    function buildTypeFilterUI() {
+      const container = document.getElementById('typeFilterList');
+      const grouped = {};
+      RULE_CATALOG.forEach((item) => {
+        if (!grouped[item.group]) grouped[item.group] = [];
+        grouped[item.group].push(item);
+      });
+
+      const html = Object.keys(grouped).map((groupName) => {
+        const rows = grouped[groupName].map((rule) => {
+          const count = state.events.filter((ev) => ev.type === rule.key).length;
+          const checked = state.activeTypes.has(rule.key) ? 'checked' : '';
+          return `
+            <label class="type-item">
+              <input type="checkbox" data-type="${rule.key}" ${checked} />
+              <span class="type-dot" style="background:${rule.color}"></span>
+              <span>${safeText(rule.label)}</span>
+              <span class="count-badge">${count}</span>
+            </label>
+          `;
+        }).join('');
+
+        return `
+          <div class="type-group">
+            <div class="type-group-title">${safeText(groupName)}</div>
+            ${rows}
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = html;
+
+      container.querySelectorAll('input[data-type]').forEach((cb) => {
+        cb.addEventListener('change', (event) => {
+          const key = event.target.getAttribute('data-type');
+          if (event.target.checked) state.activeTypes.add(key);
+          else state.activeTypes.delete(key);
+          refreshAll();
+        });
+      });
+    }
+
+    function refreshThreadFilter() {
+      const select = document.getElementById('threadFilter');
+      const threads = Array.from(new Set(state.events.map((ev) => ev.thread))).sort();
+      const current = state.thread;
+      select.innerHTML = '<option value="ALL">All Threads</option>' +
+        threads.map((thread) => `<option value="${safeText(thread)}">${safeText(thread)}</option>`).join('');
+      if (threads.includes(current)) select.value = current;
+      else {
+        state.thread = 'ALL';
+        select.value = 'ALL';
+      }
+    }
+
+    function maybeRegex(query) {
+      if (!query || query.length < 3) return null;
+      if (!(query.startsWith('/') && query.endsWith('/'))) return null;
+      try {
+        return new RegExp(query.slice(1, -1), 'i');
+      } catch (_err) {
+        return null;
+      }
+    }
+
+    function computeFilteredEvents() {
+      const regex = maybeRegex(state.search);
+      const threshold = state.slowThreshold;
+      const searchLower = state.search.toLowerCase();
+
+      let list = state.events.filter((ev) => {
+        if (!state.activeTypes.has(ev.type)) return false;
+        if (!state.activeStatuses.has(ev.status)) return false;
+        if (state.onlyException && !ev.exception) return false;
+        if (state.onlySlow && ev.elapsedMs < threshold) return false;
+        if (ev.depth < state.minDepth) return false;
+        if (state.thread !== 'ALL' && ev.thread !== state.thread) return false;
+
+        if (state.search) {
+          if (regex) {
+            if (!(regex.test(ev.name) || regex.test(ev.className) || regex.test(ev.message) || regex.test(ev.type))) return false;
+          } else {
+            const hay = `${ev.name} ${ev.className} ${ev.message} ${ev.type}`.toLowerCase();
+            if (!hay.includes(searchLower)) return false;
+          }
+        }
+
+        return true;
+      });
+
+      if (state.collapseRepeated) {
+        const collapsed = [];
+        list.forEach((ev) => {
+          const prev = collapsed[collapsed.length - 1];
+          if (
+            prev &&
+            prev.type === ev.type &&
+            prev.name === ev.name &&
+            prev.status === ev.status &&
+            prev.thread === ev.thread &&
+            prev.depth === ev.depth
+          ) {
+            prev.repeated = (prev.repeated || 1) + 1;
+            prev.elapsedMs = Math.max(prev.elapsedMs, ev.elapsedMs);
+            prev.seq = ev.seq;
+            prev.time = ev.time;
+            prev.message = `${prev.message} (repeated)`;
+          } else {
+            collapsed.push({ ...ev });
+          }
+        });
+        list = collapsed;
+      }
+
+      state.filtered = list;
+    }
+
+    function updateMetrics() {
+      const total = state.events.length;
+      const fail = state.events.filter((ev) => ev.status === 'fail' || ev.exception).length;
+      const slow = state.events.filter((ev) => ev.elapsedMs >= state.slowThreshold).length;
+      const uniqueRules = new Set(state.events.map((ev) => `${ev.type}::${ev.name}`)).size;
+      const avg = total ? Math.round(state.events.reduce((sum, ev) => sum + ev.elapsedMs, 0) / total) : 0;
+
+      document.getElementById('metricTotal').textContent = String(total);
+      document.getElementById('metricFail').textContent = String(fail);
+      document.getElementById('metricSlow').textContent = String(slow);
+      document.getElementById('metricRules').textContent = String(uniqueRules);
+      document.getElementById('metricAvg').textContent = `${avg}ms`;
+
+      const pill = document.getElementById('statusPill');
+      if (!total) {
+        pill.textContent = 'idle';
+        pill.style.borderColor = 'rgba(101,212,135,0.5)';
+        pill.style.color = 'var(--ok)';
+      } else {
+        pill.textContent = `${state.filtered.length} / ${total} visible`;
+        pill.style.borderColor = fail ? 'rgba(255,106,106,0.65)' : 'rgba(101,212,135,0.5)';
+        pill.style.color = fail ? 'var(--danger)' : 'var(--ok)';
+      }
+    }
+
+    function renderEventsTable() {
+      const tbody = document.getElementById('eventRows');
+      if (!state.filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="9"><div class="table-empty">No events match the current filters.</div></td></tr>`;
+        return;
+      }
+
+      const visible = state.filtered.slice(-1400);
+      tbody.innerHTML = visible.map((ev) => {
+        const color = colorForType(ev.type);
+        const selectedClass = ev.seq === state.selectedSeq ? 'selected' : '';
+        const repeatLabel = ev.repeated ? ` x${ev.repeated}` : '';
+        return `
+          <tr class="${selectedClass}" data-seq="${ev.seq}">
+            <td>${ev.seq}${repeatLabel}</td>
+            <td>${safeText(readableTime(ev.time))}</td>
+            <td>${ev.elapsedMs}ms</td>
+            <td><span class="status-chip ${ev.status}">${ev.status}</span></td>
+            <td><span class="rule-badge" style="border-color:${color};background:${color}22">${safeText(labelForType(ev.type))}</span></td>
+            <td>${safeText(ev.name)}</td>
+            <td>${safeText(ev.className)}</td>
+            <td>${safeText(ev.thread)}</td>
+            <td title="${safeText(ev.message)}">${safeText(ev.message.slice(0, 160))}</td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.querySelectorAll('tr[data-seq]').forEach((row) => {
+        row.addEventListener('click', () => {
+          const seq = parseInt(row.getAttribute('data-seq'), 10);
+          selectEvent(seq);
+        });
+      });
+    }
+
+    function renderSequenceDiagram() {
+      const host = document.getElementById('sequenceHost');
+      if (!state.filtered.length) {
+        host.innerHTML = '<div class="sequence-empty">No events to draw. Adjust filters or import a trace.</div>';
+        return;
+      }
+
+      const events = state.filtered.slice(-220);
+      const threads = Array.from(new Set(events.map((ev) => ev.thread)));
+      const laneHeight = 130;
+      const width = Math.max(host.clientWidth || 980, 140 + events.length * 145);
+      const height = 100 + threads.length * laneHeight;
+
+      const laneY = (thread) => 70 + threads.indexOf(thread) * laneHeight;
+      const nodePos = events.map((ev, idx) => ({
+        ev,
+        x: 80 + idx * 145,
+        y: laneY(ev.thread) + ev.depth * 10
+      }));
+
+      const laneLines = threads.map((thread, idx) => {
+        const y = 70 + idx * laneHeight;
+        return `
+          <line x1="30" y1="${y}" x2="${width - 30}" y2="${y}" stroke="rgba(142,177,191,0.3)" stroke-dasharray="5 5" />
+          <text x="34" y="${y - 14}" fill="#8eb1bf" font-size="10" font-family="IBM Plex Mono">${safeText(thread)}</text>
+        `;
+      }).join('');
+
+      const edges = nodePos.map((point, idx) => {
+        if (idx === 0) return '';
+        const prev = nodePos[idx - 1];
+        const changedThread = prev.ev.thread !== point.ev.thread;
+        return `
+          <path d="M ${prev.x + 48} ${prev.y} C ${prev.x + 85} ${prev.y}, ${point.x - 85} ${point.y}, ${point.x - 48} ${point.y}"
+                fill="none"
+                stroke="${changedThread ? 'rgba(255,179,71,0.7)' : 'rgba(65,184,240,0.62)'}"
+                stroke-width="2"
+                stroke-dasharray="${changedThread ? '6 5' : '0'}"
+                marker-end="url(#arrow)" />
+        `;
+      }).join('');
+
+      const nodes = nodePos.map((point) => {
+        const ev = point.ev;
+        const fill = `${colorForType(ev.type)}22`;
+        const stroke = ev.status === 'fail' ? '#ff6a6a' : ev.status === 'warn' ? '#ffb347' : colorForType(ev.type);
+        const text = safeText(ev.name.length > 20 ? `${ev.name.slice(0, 20)}...` : ev.name);
+        const sub = safeText(`${labelForType(ev.type)} · ${ev.elapsedMs}ms`);
+        const selected = ev.seq === state.selectedSeq;
+
+        return `
+          <g class="sequence-node" data-seq="${ev.seq}" style="cursor:pointer">
+            <rect x="${point.x - 48}" y="${point.y - 24}" width="96" height="48" rx="9"
+                  fill="${fill}" stroke="${stroke}" stroke-width="${selected ? 2.6 : 1.5}" />
+            <text x="${point.x}" y="${point.y - 5}" text-anchor="middle" fill="#dff5ff" font-size="10" font-family="IBM Plex Mono">${text}</text>
+            <text x="${point.x}" y="${point.y + 10}" text-anchor="middle" fill="#9cc5d6" font-size="9" font-family="IBM Plex Mono">${sub}</text>
+            <circle cx="${point.x - 40}" cy="${point.y - 16}" r="4" fill="${ev.status === 'fail' ? '#ff6a6a' : ev.status === 'warn' ? '#ffb347' : '#65d487'}" />
+          </g>
+        `;
+      }).join('');
+
+      const svg = `
+        <div class="sequence-wrap">
+          <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L8,3 z" fill="rgba(65,184,240,0.8)"></path>
+              </marker>
+            </defs>
+            ${laneLines}
+            ${edges}
+            ${nodes}
+          </svg>
+        </div>
+      `;
+
+      host.innerHTML = svg;
+      host.querySelectorAll('.sequence-node').forEach((el) => {
+        el.addEventListener('click', () => {
+          const seq = parseInt(el.getAttribute('data-seq'), 10);
+          selectEvent(seq);
+        });
+      });
+    }
+
+    function buildDiagnosis(event, context) {
+      const msg = `${event.message} ${event.exception?.message || ''}`.toLowerCase();
+      const type = event.type;
+      const suggestions = [];
+      let cause = 'Execution failed due to rule/runtime mismatch.';
+      let confidence = 0.62;
+
+      if (msg.includes('timeout') || msg.includes('504') || type.startsWith('Connector')) {
+        cause = 'Integration latency or timeout in downstream system call.';
+        confidence = 0.84;
+        suggestions.push('Increase connector timeout only after confirming endpoint SLA and response size.');
+        suggestions.push('Validate authentication profile/token freshness and retry strategy.');
+        suggestions.push('Add a fallback Data Page source or queue retry for non-critical calls.');
+      }
+
+      if (msg.includes('obj-open') || msg.includes('not found') || msg.includes('no such')) {
+        cause = 'Object key/class mismatch while opening or loading an instance.';
+        confidence = Math.max(confidence, 0.8);
+        suggestions.push('Verify key composition and class inheritance before Obj-Open.');
+        suggestions.push('Guard with a when-condition and branch to recovery if key is absent.');
+      }
+
+      if (msg.includes('null') || msg.includes('clipboard') || msg.includes('page reference')) {
+        cause = 'Null clipboard page or missing context page at runtime.';
+        confidence = Math.max(confidence, 0.79);
+        suggestions.push('Initialize page context explicitly before Step methods.');
+        suggestions.push('Add precondition checks for required pages in Data Transform/Activity steps.');
+      }
+
+      if (msg.includes('validation') || type === 'Validate' || type === 'EditValidate') {
+        cause = 'Data quality failure against Validate/Edit Validate conditions.';
+        confidence = Math.max(confidence, 0.86);
+        suggestions.push('Inspect required properties and page-level messages in validation rules.');
+        suggestions.push('Shift user-facing validations earlier to reduce downstream hard fails.');
+      }
+
+      if (msg.includes('lock') || msg.includes('contention')) {
+        cause = 'Case lock contention or stale lock token.';
+        confidence = Math.max(confidence, 0.74);
+        suggestions.push('Enable lock diagnostics and reduce lock hold window in long activities.');
+        suggestions.push('Route update to queue processor when synchronous lock acquisition fails.');
+      }
+
+      if (!suggestions.length) {
+        suggestions.push('Open full stack trace and compare with the previous three successful calls.');
+        suggestions.push('Check ruleset version consistency between environment and deployment package.');
+        suggestions.push('Add guardrail logging around this rule and its immediate parent call.');
+      }
+
+      const contextHint = context.length
+        ? `Preceding context: ${context.map((c) => `#${c.seq} ${c.name}`).join(' -> ')}`
+        : 'No prior events in this thread were captured in the selected range.';
+
+      return { cause, suggestions, confidence, contextHint };
+    }
+
+    function buildInsights() {
+      const target = state.events;
+      const insights = [];
+
+      const failEvents = target.filter((ev) => ev.status === 'fail' || ev.exception);
+      failEvents.forEach((event) => {
+        const context = target.filter((ev) => ev.thread === event.thread && ev.seq < event.seq).slice(-4);
+        const diagnosis = buildDiagnosis(event, context);
+        insights.push({
+          id: `fail:${event.seq}`,
+          severity: diagnosis.confidence >= 0.82 ? 'high' : diagnosis.confidence >= 0.68 ? 'medium' : 'low',
+          title: `${labelForType(event.type)} failure at #${event.seq}`,
+          meta: `${event.thread} · ${event.className}`,
+          body: diagnosis.cause,
+          recommendations: diagnosis.suggestions,
+          context: diagnosis.contextHint,
+          seq: event.seq,
+          confidence: diagnosis.confidence
+        });
+      });
+
+      const byRule = {};
+      target.forEach((ev) => {
+        const key = `${ev.type}::${ev.name}`;
+        if (!byRule[key]) byRule[key] = { count: 0, total: 0, fail: 0, type: ev.type, name: ev.name };
+        byRule[key].count += 1;
+        byRule[key].total += ev.elapsedMs;
+        if (ev.status === 'fail') byRule[key].fail += 1;
+      });
+
+      Object.values(byRule).forEach((rule) => {
+        const avg = rule.total / rule.count;
+        const failRate = rule.fail / rule.count;
+        if (rule.count >= 3 && avg >= state.slowThreshold * 1.3) {
+          insights.push({
+            id: `hotspot:${rule.type}:${rule.name}`,
+            severity: avg > state.slowThreshold * 2 ? 'high' : 'medium',
+            title: `Latency hotspot: ${rule.name}`,
+            meta: `${labelForType(rule.type)} · ${rule.count} calls`,
+            body: `Average latency ${Math.round(avg)}ms exceeds threshold ${state.slowThreshold}ms.`,
+            recommendations: [
+              'Profile this rule with tracer + DB/API timings to isolate backend wait time.',
+              'Cache deterministic outputs in Data Page or reduce redundant calls in looped activities.',
+              'Split expensive rule branch and invoke only when predicate is true.'
+            ],
+            context: 'Hotspot score generated from average latency over repeated calls.',
+            seq: null,
+            confidence: 0.73
+          });
+        }
+
+        if (rule.count >= 3 && failRate >= 0.35) {
+          insights.push({
+            id: `risk:${rule.type}:${rule.name}`,
+            severity: failRate >= 0.55 ? 'high' : 'medium',
+            title: `Reliability risk: ${rule.name}`,
+            meta: `${labelForType(rule.type)} · fail rate ${(failRate * 100).toFixed(0)}%`,
+            body: 'This rule fails frequently compared to normal runtime behavior.',
+            recommendations: [
+              'Review recent ruleset versions and deployment diff for this rule family.',
+              'Add fast-fail prechecks and graceful fallback branch in flow/action.',
+              'Capture request payload snapshots for failing instances only.'
+            ],
+            context: `Computed from ${rule.count} calls in this session.`,
+            seq: null,
+            confidence: 0.77
+          });
+        }
+      });
+
+      insights.sort((a, b) => {
+        const sev = { high: 3, medium: 2, low: 1 };
+        if (sev[b.severity] !== sev[a.severity]) return sev[b.severity] - sev[a.severity];
+        return (b.confidence || 0) - (a.confidence || 0);
+      });
+
+      return insights.slice(0, 80);
+    }
+
+    function parseLLMResponse(content) {
+      const normalizeArray = (value) => {
+        if (!Array.isArray(value)) return [];
+        return value.map((item) => String(item).trim()).filter(Boolean).slice(0, 8);
+      };
+
+      const normalizeConfidence = (value) => {
+        const n = Number(value);
+        if (Number.isFinite(n)) {
+          if (n > 1 && n <= 100) return Math.max(0, Math.min(1, n / 100));
+          return Math.max(0, Math.min(1, n));
+        }
+        return null;
+      };
+
+      let parsed = null;
+      try {
+        parsed = JSON.parse(content);
+      } catch (_err) {
+        const objectMatch = content.match(/\{[\s\S]*\}/);
+        if (objectMatch) {
+          try {
+            parsed = JSON.parse(objectMatch[0]);
+          } catch (_err2) {
+            parsed = null;
+          }
+        }
+      }
+
+      if (parsed) {
+        return {
+          summary: String(parsed.summary || parsed.root_cause || '').trim(),
+          rootCause: String(parsed.root_cause || parsed.cause || parsed.summary || '').trim(),
+          immediateActions: normalizeArray(parsed.immediate_actions || parsed.actions || parsed.quick_fixes),
+          hardeningActions: normalizeArray(parsed.hardening_actions || parsed.long_term_actions || parsed.preventions),
+          verificationSteps: normalizeArray(parsed.verification_steps || parsed.validation_steps || parsed.tests),
+          confidence: normalizeConfidence(parsed.confidence)
+        };
+      }
+
+      const lines = String(content)
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+      const bullets = lines
+        .filter((line) => /^[-*]\s+/.test(line) || /^\d+\.\s+/.test(line))
+        .map((line) => line.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '').trim())
+        .filter(Boolean);
+
+      return {
+        summary: lines[0] || 'Model returned a non-structured response.',
+        rootCause: lines[0] || 'Could not infer a clear root cause from model response.',
+        immediateActions: bullets.slice(0, 4),
+        hardeningActions: bullets.slice(4, 8),
+        verificationSteps: [],
+        confidence: null
+      };
+    }
+
+    function llmBlockHtml(record) {
+      if (!record) return '';
+      if (!record.ok) {
+        return `
+          <div class="llm-block">
+            <div class="llm-block-title">LLM Enrichment</div>
+            <div style="font-size:11px;color:var(--danger)">Request failed: ${safeText(record.error || 'unknown error')}</div>
+          </div>
+        `;
+      }
+
+      const immediate = (record.immediateActions || []).map((item) => `<div>${safeText(item)}</div>`).join('');
+      const hardening = (record.hardeningActions || []).map((item) => `<div>${safeText(item)}</div>`).join('');
+      const verify = (record.verificationSteps || []).map((item) => `<div>${safeText(item)}</div>`).join('');
+      const conf = Number.isFinite(record.confidence) ? ` · confidence ${(record.confidence * 100).toFixed(0)}%` : '';
+
+      return `
+        <div class="llm-block">
+          <div class="llm-block-title">LLM Remediation${conf}</div>
+          <div style="font-size:11px;line-height:1.45;color:#d6edf7">${safeText(record.rootCause || record.summary || 'No root-cause summary returned.')}</div>
+          ${immediate ? `<div class="llm-list">${immediate}</div>` : ''}
+          ${hardening ? `<div class="llm-list">${hardening}</div>` : ''}
+          ${verify ? `<div class="llm-list">${verify}</div>` : ''}
+        </div>
+      `;
+    }
+
+    function buildLLMMessages(insight) {
+      const contextEvents = insight.seq
+        ? state.events.filter((ev) => ev.seq <= insight.seq && ev.seq >= Math.max(1, insight.seq - 6))
+        : [];
+
+      const evidence = contextEvents.map((ev) => ({
+        seq: ev.seq,
+        time: readableTime(ev.time),
+        thread: ev.thread,
+        type: ev.type,
+        name: ev.name,
+        className: ev.className,
+        status: ev.status,
+        elapsedMs: ev.elapsedMs,
+        message: ev.message,
+        stepMethod: ev.stepMethod,
+        stepPage: ev.stepPage,
+        exception: ev.exception ? { code: ev.exception.code, message: ev.exception.message } : null
+      }));
+
+      const systemPrompt = [
+        'You are a senior Pega production incident engineer.',
+        'Provide concise remediation for a tracer insight.',
+        'Return strict JSON only with keys:',
+        'summary, root_cause, immediate_actions, hardening_actions, verification_steps, confidence',
+        'immediate_actions/hardening_actions/verification_steps must be arrays of short strings.',
+        'confidence must be a number from 0 to 1.',
+        'No markdown and no extra keys.'
+      ].join(' ');
+
+      const userPayload = {
+        product: 'NexTrace Pro',
+        insight,
+        evidence
+      };
+
+      return {
+        systemPrompt,
+        userPrompt: JSON.stringify(userPayload, null, 2)
+      };
+    }
+
+    function extractResponsesText(data) {
+      if (typeof data.output_text === 'string' && data.output_text.trim()) return data.output_text.trim();
+      if (Array.isArray(data.output)) {
+        const parts = [];
+        data.output.forEach((item) => {
+          if (Array.isArray(item.content)) {
+            item.content.forEach((c) => {
+              if (typeof c.text === 'string' && c.text.trim()) parts.push(c.text.trim());
+              if (typeof c.output_text === 'string' && c.output_text.trim()) parts.push(c.output_text.trim());
+            });
+          }
+          if (typeof item.text === 'string' && item.text.trim()) parts.push(item.text.trim());
+        });
+        if (parts.length) return parts.join('\n');
+      }
+      return '';
+    }
+
+    async function fetchLLMInsight(insight, signal) {
+      const endpoint = state.llm.endpoint;
+      const model = state.llm.model;
+      const apiKey = state.llm.apiKey;
+      if (!apiKey) throw new Error('API key is missing.');
+
+      const { systemPrompt, userPrompt } = buildLLMMessages(insight);
+      const isResponsesAPI = /\/responses\/?$/i.test(endpoint);
+
+      const body = isResponsesAPI
+        ? {
+            model,
+            input: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            temperature: 0.2
+          }
+        : {
+            model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            temperature: 0.2,
+            max_tokens: 700
+          };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(body),
+        signal
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`LLM API ${response.status}: ${errText.slice(0, 240)}`);
+      }
+
+      const data = await response.json();
+      let content = '';
+      if (isResponsesAPI) {
+        content = extractResponsesText(data);
+      } else {
+        const msg = data.choices?.[0]?.message?.content;
+        content = typeof msg === 'string' ? msg : Array.isArray(msg) ? msg.map((m) => m.text || '').join('\n') : '';
+      }
+
+      if (!content.trim()) {
+        throw new Error('Model returned an empty response.');
+      }
+
+      return parseLLMResponse(content);
+    }
+
+    function pickLLMTargets(allInsights) {
+      const ranked = allInsights
+        .filter((item) => item.seq || item.severity !== 'low')
+        .sort((a, b) => {
+          const order = { high: 3, medium: 2, low: 1 };
+          return (order[b.severity] || 0) - (order[a.severity] || 0);
+        });
+      return ranked.slice(0, 12);
+    }
+
+    async function enrichInsightsWithLLM() {
+      if (state.llmBusy) return;
+      pullLLMFromInputs();
+
+      if (!state.llm.apiKey) {
+        updateLLMStatus('LLM mode: missing API key', 'error');
+        showToast('Enter API key to run live enrichment.', 'error');
+        return;
+      }
+
+      const insights = buildInsights();
+      const targets = pickLLMTargets(insights);
+      if (!targets.length) {
+        showToast('No insights available for enrichment.', 'error');
+        return;
+      }
+
+      setLLMBusy(true);
+      const abortController = new AbortController();
+      state.llmAbortController = abortController;
+      let completed = 0;
+      let failed = 0;
+
+      try {
+        for (let i = 0; i < targets.length; i += 1) {
+          const insight = targets[i];
+          updateLLMStatus(`LLM mode: enriching ${i + 1}/${targets.length} (${insight.title})`);
+          try {
+            const enriched = await fetchLLMInsight(insight, abortController.signal);
+            state.llmEnrichment[insight.id] = {
+              ok: true,
+              ...enriched,
+              updatedAt: new Date().toISOString()
+            };
+            completed += 1;
+          } catch (err) {
+            if (err && err.name === 'AbortError') throw err;
+            state.llmEnrichment[insight.id] = {
+              ok: false,
+              error: err?.message || 'Unknown LLM error',
+              updatedAt: new Date().toISOString()
+            };
+            failed += 1;
+          }
+          renderInsightFeed();
+          if (state.selectedSeq !== null) {
+            const selected = state.events.find((ev) => ev.seq === state.selectedSeq) || null;
+            renderDetail(selected);
+          }
+        }
+
+        updateLLMStatus(`LLM mode: enriched ${completed} insight(s), ${failed} failed`, failed ? 'error' : 'ok');
+        showToast(`LLM enrichment finished: ${completed} success, ${failed} failed`, failed ? '' : 'success');
+      } catch (err) {
+        if (err && err.name === 'AbortError') {
+          updateLLMStatus('LLM mode: enrichment stopped');
+          showToast('LLM enrichment stopped.');
+        } else {
+          updateLLMStatus(`LLM mode: ${err?.message || 'failed'}`, 'error');
+          showToast(err?.message || 'LLM enrichment failed', 'error');
+        }
+      } finally {
+        state.llmAbortController = null;
+        setLLMBusy(false);
+      }
+    }
+
+    function stopLLMEnrichment() {
+      if (state.llmAbortController) {
+        state.llmAbortController.abort();
+      }
+    }
+
+    function renderInsightFeed() {
+      const feed = document.getElementById('insightFeed');
+      const insights = buildInsights();
+
+      if (!insights.length) {
+        feed.innerHTML = '<div class="insight-empty">No incidents detected. Capture or import failure scenarios to generate insights.</div>';
+        return;
+      }
+
+      feed.innerHTML = insights.map((item, idx) => {
+        const recs = item.recommendations.map((rec) => `<div>${safeText(rec)}</div>`).join('');
+        const jump = item.seq ? `<button class="tiny" data-jump-seq="${item.seq}">Go to #${item.seq}</button>` : '';
+        const llmBlock = llmBlockHtml(state.llmEnrichment[item.id]);
+        return `
+          <article class="insight-card ${item.severity}">
+            <div class="insight-title">${safeText(item.title)}</div>
+            <div class="insight-meta">${safeText(item.meta)} · confidence ${(item.confidence * 100).toFixed(0)}%</div>
+            <div style="font-size:12px;line-height:1.5">${safeText(item.body)}</div>
+            <div class="bullet-list">${recs}</div>
+            ${llmBlock}
+            <div style="font-size:11px;color:var(--muted)">${safeText(item.context)}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:10px;color:var(--muted)">Insight #${idx + 1}</span>
+              ${jump}
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      feed.querySelectorAll('button[data-jump-seq]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const seq = parseInt(btn.getAttribute('data-jump-seq'), 10);
+          setActiveTab('events');
+          selectEvent(seq);
+        });
+      });
+    }
+
+    function renderDetail(event) {
+      const title = document.getElementById('detailTitle');
+      const sub = document.getElementById('detailSub');
+      const body = document.getElementById('detailBody');
+
+      if (!event) {
+        title.textContent = 'Event Detail';
+        sub.textContent = 'Select a row or sequence node';
+        body.innerHTML = '<div class="detail-block"><h4>No Selection</h4><div class="bullet-list"><div>Pick an event to inspect runtime metadata and AI diagnostics.</div></div></div>';
+        return;
+      }
+
+      const context = state.events.filter((ev) => ev.thread === event.thread && ev.seq < event.seq).slice(-4);
+      const diagnosis = buildDiagnosis(event, context);
+      const llmEnriched = state.llmEnrichment[`fail:${event.seq}`] || null;
+
+      title.textContent = `${event.name}`;
+      sub.textContent = `${labelForType(event.type)} · ${event.className}`;
+
+      const propsHtml = Object.entries(event.props || {}).map(([k, v]) => `<div class="k">${safeText(k)}</div><div>${safeText(v)}</div>`).join('');
+      const stack = event.exception?.stack || '';
+
+      body.innerHTML = `
+        <section class="detail-block">
+          <h4>Execution</h4>
+          <div class="kv">
+            <div class="k">Sequence</div><div>#${event.seq}</div>
+            <div class="k">Thread</div><div>${safeText(event.thread)}</div>
+            <div class="k">Time</div><div>${safeText(readableTime(event.time))}</div>
+            <div class="k">Latency</div><div>${event.elapsedMs}ms</div>
+            <div class="k">Status</div><div><span class="status-chip ${event.status}">${event.status}</span></div>
+            <div class="k">Depth</div><div>${event.depth}</div>
+            <div class="k">Step</div><div>${safeText(event.step || '-')} ${event.stepMethod ? `(${safeText(event.stepMethod)})` : ''}</div>
+            <div class="k">Message</div><div>${safeText(event.message)}</div>
+          </div>
+        </section>
+
+        <section class="detail-block">
+          <h4>AI Root Cause</h4>
+          <div style="font-size:12px;line-height:1.55;margin-bottom:8px">${safeText(diagnosis.cause)}</div>
+          <div class="bullet-list">${diagnosis.suggestions.map((s) => `<div>${safeText(s)}</div>`).join('')}</div>
+          <div style="margin-top:8px;font-size:11px;color:var(--muted)">${safeText(diagnosis.contextHint)}</div>
+          <div style="margin-top:8px;font-size:10px;color:var(--muted)">Confidence ${(diagnosis.confidence * 100).toFixed(0)}%</div>
+        </section>
+
+        ${llmEnriched ? `
+        <section class="detail-block">
+          <h4>LLM Remediation</h4>
+          ${llmBlockHtml(llmEnriched)}
+        </section>
+        ` : ''}
+
+        <section class="detail-block">
+          <h4>Exception</h4>
+          <div class="kv">
+            <div class="k">Code</div><div>${safeText(event.exception?.code || '-')}</div>
+            <div class="k">Message</div><div>${safeText(event.exception?.message || '-')}</div>
+            <div class="k">Event Type</div><div>${safeText(event.exception?.rawEventType || '-')}</div>
+          </div>
+          <div class="code">${safeText(stack || 'No stack trace available.')}</div>
+        </section>
+
+        <section class="detail-block">
+          <h4>Raw Properties</h4>
+          <div class="kv">${propsHtml || '<div class="k">-</div><div>No extra properties</div>'}</div>
+        </section>
+      `;
+    }
+
+    function selectEvent(seq) {
+      const found = state.filtered.find((ev) => ev.seq === seq) || state.events.find((ev) => ev.seq === seq);
+      if (!found) return;
+      state.selectedSeq = found.seq;
+      renderEventsTable();
+      renderSequenceDiagram();
+      renderDetail(found);
+    }
+
+    function setActiveTab(name) {
+      document.querySelectorAll('.tab').forEach((tab) => {
+        tab.classList.toggle('active', tab.getAttribute('data-tab') === name);
+      });
+      document.querySelectorAll('.tab-panel').forEach((panel) => {
+        const on = panel.id === `tab-${name}`;
+        panel.classList.toggle('active', on);
+      });
+    }
+
+    function refreshAll() {
+      computeFilteredEvents();
+      updateMetrics();
+      buildTypeFilterUI();
+      renderEventsTable();
+      renderSequenceDiagram();
+      renderInsightFeed();
+
+      if (state.selectedSeq !== null) {
+        const selected = state.filtered.find((ev) => ev.seq === state.selectedSeq) ||
+          state.events.find((ev) => ev.seq === state.selectedSeq);
+        renderDetail(selected || null);
+      }
+    }
+
+    function importTextPayload(payload, fileName = 'input') {
+      const trimmed = payload.trim();
+      let parsed;
+      if (trimmed.startsWith('<')) {
+        parsed = parsePegaXml(trimmed);
+      } else {
+        parsed = parseJsonEvents(trimmed);
+      }
+
+      state.events = parsed.events;
+      state.llmEnrichment = {};
+      syncCatalogWithImportedTypes();
+      state.selectedSeq = null;
+      refreshThreadFilter();
+      refreshAll();
+      showToast(`Imported ${parsed.events.length} events (${parsed.format}) from ${fileName}`, 'success');
+    }
+
+    function exportFiltered() {
+      if (!state.filtered.length) {
+        showToast('No filtered events to export.', 'error');
+        return;
+      }
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        totalEvents: state.events.length,
+        visibleEvents: state.filtered.length,
+        filters: {
+          activeTypes: Array.from(state.activeTypes),
+          activeStatuses: Array.from(state.activeStatuses),
+          onlyException: state.onlyException,
+          onlySlow: state.onlySlow,
+          minDepth: state.minDepth,
+          thread: state.thread,
+          slowThreshold: state.slowThreshold,
+          search: state.search
+        },
+        events: state.filtered
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `nextrace-pro-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast(`Exported ${state.filtered.length} filtered events`, 'success');
+    }
+
+    function resetSession() {
+      stopLLMEnrichment();
+      state.events = [];
+      state.filtered = [];
+      state.selectedSeq = null;
+      state.llmEnrichment = {};
+      state.thread = 'ALL';
+      state.activeTypes = new Set(RULE_CATALOG.map((r) => r.key));
+      state.activeStatuses = new Set(['pass', 'warn', 'fail']);
+      state.onlyException = false;
+      state.onlySlow = false;
+      state.collapseRepeated = false;
+      state.search = '';
+      state.minDepth = 0;
+      refreshThreadFilter();
+      document.getElementById('searchInput').value = '';
+      document.getElementById('minDepth').value = '0';
+      document.getElementById('onlyException').checked = false;
+      document.getElementById('onlySlow').checked = false;
+      document.getElementById('collapseRepeated').checked = false;
+      document.querySelectorAll('#statusFilterWrap input[data-status]').forEach((cb) => {
+        cb.checked = true;
+      });
+      refreshAll();
+      showToast('Session reset', 'success');
+    }
+
+    function wireEvents() {
+      document.getElementById('btnImport').addEventListener('click', () => {
+        document.getElementById('fileInput').value = '';
+        document.getElementById('fileInput').click();
+      });
+
+      document.getElementById('fileInput').addEventListener('change', async (event) => {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          importTextPayload(text, file.name);
+        } catch (err) {
+          showToast(err.message || 'Failed to parse input file.', 'error');
+        }
+      });
+
+      document.getElementById('btnDemo').addEventListener('click', () => {
+        state.events = generateDemoTrace();
+        state.llmEnrichment = {};
+        syncCatalogWithImportedTypes();
+        state.selectedSeq = null;
+        refreshThreadFilter();
+        refreshAll();
+        showToast(`Generated demo trace (${state.events.length} events)`, 'success');
+      });
+
+      document.getElementById('btnExport').addEventListener('click', exportFiltered);
+      document.getElementById('btnReset').addEventListener('click', resetSession);
+      document.getElementById('btnLLMSave').addEventListener('click', saveLLMConfig);
+      document.getElementById('btnLLMEnrich').addEventListener('click', enrichInsightsWithLLM);
+      document.getElementById('btnLLMStop').addEventListener('click', stopLLMEnrichment);
+
+      document.getElementById('llmEndpoint').addEventListener('change', pullLLMFromInputs);
+      document.getElementById('llmModel').addEventListener('change', pullLLMFromInputs);
+      document.getElementById('llmApiKey').addEventListener('input', pullLLMFromInputs);
+
+      document.getElementById('btnSelectAllTypes').addEventListener('click', () => {
+        state.activeTypes = new Set(RULE_CATALOG.map((r) => r.key));
+        refreshAll();
+      });
+
+      document.getElementById('btnClearAllTypes').addEventListener('click', () => {
+        state.activeTypes = new Set();
+        refreshAll();
+      });
+
+      document.querySelectorAll('#statusFilterWrap input[data-status]').forEach((cb) => {
+        cb.addEventListener('change', () => {
+          const status = cb.getAttribute('data-status');
+          if (cb.checked) state.activeStatuses.add(status);
+          else state.activeStatuses.delete(status);
+          refreshAll();
+        });
+      });
+
+      document.getElementById('onlyException').addEventListener('change', (e) => {
+        state.onlyException = e.target.checked;
+        refreshAll();
+      });
+
+      document.getElementById('onlySlow').addEventListener('change', (e) => {
+        state.onlySlow = e.target.checked;
+        refreshAll();
+      });
+
+      document.getElementById('collapseRepeated').addEventListener('change', (e) => {
+        state.collapseRepeated = e.target.checked;
+        refreshAll();
+      });
+
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        state.search = e.target.value.trim();
+        refreshAll();
+      });
+
+      document.getElementById('threadFilter').addEventListener('change', (e) => {
+        state.thread = e.target.value;
+        refreshAll();
+      });
+
+      document.getElementById('minDepth').addEventListener('input', (e) => {
+        state.minDepth = Math.max(0, parseInt(e.target.value || '0', 10) || 0);
+        refreshAll();
+      });
+
+      document.getElementById('slowThreshold').addEventListener('input', (e) => {
+        state.slowThreshold = Math.max(1, parseInt(e.target.value || '220', 10) || 220);
+        refreshAll();
+      });
+
+      document.getElementById('btnFocusFailures').addEventListener('click', () => {
+        state.activeStatuses = new Set(['fail']);
+        document.querySelectorAll('#statusFilterWrap input[data-status]').forEach((cb) => {
+          cb.checked = cb.getAttribute('data-status') === 'fail';
+        });
+        state.onlyException = true;
+        document.getElementById('onlyException').checked = true;
+        setActiveTab('insights');
+        refreshAll();
+      });
+
+      document.querySelectorAll('.tab').forEach((tab) => {
+        tab.addEventListener('click', () => {
+          setActiveTab(tab.getAttribute('data-tab'));
+          if (tab.getAttribute('data-tab') === 'sequence') {
+            requestAnimationFrame(renderSequenceDiagram);
+          }
+          if (tab.getAttribute('data-tab') === 'insights') {
+            requestAnimationFrame(renderInsightFeed);
+          }
+        });
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+          event.preventDefault();
+          document.getElementById('searchInput').focus();
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        renderSequenceDiagram();
+      });
+    }
+
+    function bootstrap() {
+      loadLLMConfig();
+      wireEvents();
+      syncLLMInputs();
+      setLLMBusy(false);
+      buildTypeFilterUI();
+      refreshThreadFilter();
+      refreshAll();
+      showToast('NexTrace Pro ready. Import a tracer export or generate demo data.');
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>
